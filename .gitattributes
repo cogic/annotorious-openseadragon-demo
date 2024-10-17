@@ -1,0 +1,4 @@
+# https://www.git-scm.com/docs/gitattributes
+
+# 防止 git 拉取仓库时换行符被修改为crlf
+* text=auto eol=lf
