@@ -8,10 +8,15 @@ export default {
   ],
   plugins: ['stylelint-order', 'stylelint-scss'],
   overrides: [
-    // 配置此令其 lint vue 文件
+    // 配置此以 lint vue 文件
     {
       files: '**/*.vue',
       customSyntax: 'postcss-html',
+    },
+    // 配置此以 lint scss 文件
+    {
+      files: '**/*.scss',
+      customSyntax: 'postcss-scss',
     },
   ],
   rules: {
