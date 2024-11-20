@@ -1,1 +1,1 @@
-# techtry
+# annotorious-openseadragon-demo
