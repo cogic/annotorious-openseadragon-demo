@@ -12,10 +12,12 @@ import IconFitWidth from '@/components/icons/IconFitWidth.vue';
 import IconStretching from '@/components/icons/IconStretching.vue';
 import IconCursorDefaultOutline from '@/components/icons/IconCursorDefaultOutline.vue';
 import IconDelete from '@/components/icons/IconDelete.vue';
+import { onUnmounted } from 'vue';
 
 const anno = ref();
 const curTag = ref();
 const curTool = ref();
+const oriTool = ref();
 const curAnnotaion = ref();
 const viewer = ref();
 const tools = ref({
@@ -36,6 +38,8 @@ const imageControls = ref({
   fullPageButton: { id: 'full-page-btn', label: '切换全屏', icon: markRaw(IconStretching) },
 });
 const annotations = ref([]);
+const hotkey = 'shift';
+let isDrawing = ref(false);
 
 const initAnno = () => {
   const formatter = function (annotation) {
@@ -103,6 +107,7 @@ const initAnno = () => {
     // curAnnotaion.value = annotation;
     annotations.value.push(annotation);
     changeDrawingTool(curTool.value);
+    isDrawing.value = false;
     // changeDrawingTool(tools.value.mouse);
   });
 
@@ -129,6 +134,10 @@ const initAnno = () => {
 
   anno.value.on('cancelSelected', (selection) => {
     curAnnotaion.value = null;
+  });
+
+  anno.value.on('startSelection', (point) => {
+    isDrawing.value = true;
   });
 
   anno.value.on('clickAnnotation', (annotation, element) => {
@@ -179,14 +188,46 @@ const handleOnDeleteAnnotation = (annotationId) => {
     annotations.value.findIndex((a) => a.id === annotationId),
     1
   );
+  isDrawing.value = false;
 };
 
 const findTag = (annotation) => {
   return annotation.body.find((b) => b.purpose == 'tagging').value;
 };
 
+const onKeyDown = (evt) => {
+  console.log(evt.key)
+  if (
+    evt.key.toLowerCase() === hotkey &&
+    curTool.value !== tools.value.mouse &&
+    isDrawing.value === false
+  ) {
+    oriTool.value = curTool.value;
+    changeDrawingTool(tools.value.mouse);
+  }
+};
+const onKeyUp = (evt) => {console.log('onKeyUp')
+  if (
+    evt.key.toLowerCase() === hotkey &&
+    curTool.value === tools.value.mouse &&
+    oriTool.value != null &&
+    isDrawing.value === false
+  ) {
+    changeDrawingTool(oriTool.value);
+  }
+};
+
 onMounted(() => {
   initAnno();
+
+  // BUG: 鼠标选中标注后再次点击标注或拖拽标注，此时鼠标若在标注上，则无法监听到按键事件
+  document.addEventListener('keydown', onKeyDown);
+  document.addEventListener('keyup', onKeyUp);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', onKeyDown);
+  document.removeEventListener('keydown', onKeyUp);
 });
 </script>
 
