@@ -108,7 +108,7 @@ const initAnno = () => {
 
   anno.value.on('deleteAnnotation', function (annotation) {
     console.log(annotation);
-    handleOnDeleteAnnotation.value(annotation.id);
+    handleOnDeleteAnnotation(annotation.id);
   });
 
   anno.value.on('createSelection', (selection) => {
@@ -159,7 +159,7 @@ const changeTag = async (tag) => {
 };
 
 const changeAnnotationTag = async (id, tagId) => {
-  const annotation = anno.value.getAnnotationById(id);
+  const annotation = annotations.value.find((a) => a.id === id);
   annotation.body.find((b) => b.purpose === 'tagging').value = tags.value.find(
     (t) => t.id === tagId
   );
@@ -204,7 +204,7 @@ onMounted(() => {
     </div>
     <div
       id="image-container"
-      class="image-container"
+      :class="{ 'image-container': true, 'edit-mode': curTool === tools.mouse }"
     >
       <div class="image-control-group">
         <div
@@ -235,12 +235,14 @@ onMounted(() => {
           :style="{
             borderColor: findTag(annotation).color,
             backgroundColor: annotation.id === curAnnotaion?.id ? findTag(annotation).color : '',
+            cursor: curTool === tools.mouse ? 'pointer' : 'default',
           }"
-          @click="selectAnnotation(annotation.id)"
+          @click="curTool === tools.mouse && selectAnnotation(annotation.id)"
         >
-          <div>
-            {{ index + 1 }}.
+          <div class="annotation-item-tag">
+            {{ index + 1 }}.&nbsp;
             <select
+              v-show="curTool === tools.mouse"
               class="tag-select"
               :value="findTag(annotation).id"
               @change="changeAnnotationTag(annotation.id, $event.target.value)"
@@ -252,6 +254,7 @@ onMounted(() => {
                 {{ tag.id }}
               </option>
             </select>
+            <span v-show="curTool !== tools.mouse">{{ findTag(annotation).id }}</span>
           </div>
           <div
             class="delete-btn"
@@ -453,10 +456,16 @@ onMounted(() => {
       background-color: #0078dc;
     }
 
-    .tag-select {
-      height: 30px;
-      cursor: pointer;
-      border-radius: 4px;
+    .annotation-item-tag {
+      display: flex;
+      align-items: center;
+
+      .tag-select {
+        height: 30px;
+        font-size: inherit;
+        cursor: pointer;
+        border-radius: 4px;
+      }
     }
 
     .delete-btn {
@@ -562,6 +571,13 @@ onMounted(() => {
         }
       }
     }
+  }
+}
+
+.image-container:not(.edit-mode) .a9s-annotation {
+  rect,
+  polygon {
+    cursor: default;
   }
 }
 </style>
