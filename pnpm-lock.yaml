@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@recogito/annotorious':
+        specifier: github:cogic/annotorious#2.x
+        version: https://codeload.github.com/cogic/annotorious/tar.gz/c4a02a2e5df344a74613ec31608546e3ece14b49(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
       '@recogito/annotorious-openseadragon':
         specifier: github:cogic/annotorious-openseadragon
         version: https://codeload.github.com/cogic/annotorious-openseadragon/tar.gz/c1c84a0bb6d6cec9a843e2cf519ab86913acec6a(openseadragon@4.0.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
@@ -17,6 +20,9 @@ importers:
       pinia:
         specifier: ^2.2.4
         version: 2.2.4(typescript@5.5.4)(vue@3.5.12(typescript@5.5.4))
+      uuid:
+        specifier: ^11.0.3
+        version: 11.0.3
       vue:
         specifier: ^3.5.11
         version: 3.5.12(typescript@5.5.4)
@@ -1922,6 +1928,10 @@ packages:
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
+
+  uuid@11.0.3:
+    resolution: {integrity: sha512-d0z310fCWv5dJwnX1Y/MncBAqGMKEzlBb1AOf7z9K8ALnd0utBX/msg/fA0+sbyN1ihbMsLhrBlnl1ak7Wa0rg==}
+    hasBin: true
 
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
@@ -3857,6 +3867,8 @@ snapshots:
       punycode: 2.3.1
 
   util-deprecate@1.0.2: {}
+
+  uuid@11.0.3: {}
 
   uuid@8.3.2: {}
 

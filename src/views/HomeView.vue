@@ -3,6 +3,10 @@ import { ref, onMounted, markRaw } from 'vue';
 import OpenSeadragon from 'openseadragon';
 import Annotorious from '@recogito/annotorious-openseadragon';
 import '@recogito/annotorious-openseadragon/dist/annotorious.min.css';
+import {
+  parseRectFragment,
+} from '@recogito/annotorious/src/selectors/RectFragment';
+import { svgFragmentToShape } from '@recogito/annotorious/src/selectors/EmbeddedSVG';
 import LabelsFormatter from '@/assets/LabelsFormatter';
 import IconPolygon from '@/components/icons/IconPolygon.vue';
 import IconRectangle from '@/components/icons/IconRectangle.vue';
@@ -12,7 +16,10 @@ import IconFitWidth from '@/components/icons/IconFitWidth.vue';
 import IconStretching from '@/components/icons/IconStretching.vue';
 import IconCursorDefaultOutline from '@/components/icons/IconCursorDefaultOutline.vue';
 import IconDelete from '@/components/icons/IconDelete.vue';
+import IconImport from '@/components/icons/IconImport.vue';
+import IconExport from '@/components/icons/IconExport.vue';
 import { onUnmounted } from 'vue';
+import { v4 as uuidv4 } from 'uuid';
 
 const anno = ref();
 const curTag = ref();
@@ -112,7 +119,6 @@ const initAnno = () => {
   });
 
   anno.value.on('deleteAnnotation', function (annotation) {
-    console.log(annotation);
     handleOnDeleteAnnotation(annotation.id);
   });
 
@@ -183,6 +189,139 @@ const removeAnnotation = (id) => {
   handleOnDeleteAnnotation(id);
 };
 
+const labelmeToWebAnnotation = (labelmeData) => {
+  const image = anno.value._env.image;
+  return labelmeData.shapes.map((shape) => {
+    let selector;
+    if (shape.shape_type === 'rectangle') {
+      const { x, y, w, h } = {
+        x: shape.points[0][0],
+        y: shape.points[0][1],
+        w: shape.points[1][0] - shape.points[0][0],
+        h: shape.points[1][1] - shape.points[0][1],
+      };
+
+      selector = {
+        type: 'FragmentSelector',
+        conformsTo: 'http://www.w3.org/TR/media-frags/',
+        value: `xywh=pixel:${x},${y},${w},${h}`,
+      };
+    } else {
+      const points = shape.points.map((point) => point.join(',')).join(' ');
+      selector = {
+        type: 'SvgSelector',
+        value: `<svg><polygon points=\"${points}\"></polygon></svg>`,
+      };
+    }
+
+    return {
+      '@context': 'http://www.w3.org/ns/anno.jsonld',
+      type: 'Annotation',
+      id: `#${uuidv4()}`,
+      body: [
+        {
+          type: 'TextualBody',
+          purpose: 'tagging',
+          value: tags.value.find((t) => t.id === shape.label),
+        },
+      ],
+      target: {
+        source: image?.src,
+        selector,
+      },
+    };
+  });
+};
+const webAnnotationToLabelme = (annotations) => {
+  const image = anno.value._env.image;
+  const shapes = annotations.map((annotation) => {
+    return {
+      label: findTag(annotation).id,
+      points: (() => {
+        const selector = function (type) {
+          return this.target.selector;
+        };
+
+        if (annotation.target.selector.type === 'FragmentSelector') {
+          const { x, y, w, h } = parseRectFragment({ ...annotation, selector });
+          return [
+            [x, y],
+            [x + w, y + h],
+          ];
+        } else {
+          return Array.from(svgFragmentToShape({ ...annotation, selector }).points).map((point) => [
+            point.x,
+            point.y,
+          ]);
+        }
+      })(),
+      group_id: null,
+      description: '',
+      shape_type: (() => {
+        if (annotation.target.selector.type === 'FragmentSelector') {
+          return 'rectangle';
+        } else {
+          return 'polygon';
+        }
+      })(),
+      flags: {},
+      mask: null,
+    };
+  });
+
+  return {
+    version: '0.0.0',
+    flags: {},
+    shapes: shapes || [],
+    imagePath: image.src,
+    imageData: null,
+    imageHeight: image.naturalHeight,
+    imageWidth: image.naturalWidth,
+  };
+};
+const importAnnotations = () => {
+  const input = document.createElement('input');
+  input.style.display = 'none';
+  input.type = 'file';
+  input.setAttribute('accept', 'application/json');
+  input.addEventListener('change', (e) => {
+    const files = e.target.files;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const annotationList = labelmeToWebAnnotation(JSON.parse(e.target.result))
+        annotationList.forEach(annotation => {
+          anno.value.addAnnotation(annotation);
+          annotations.value.push(annotation);
+        });
+      } catch (error) {
+        console.error(error)
+      }
+    };
+    reader.readAsText(files[0]);
+
+    document.body.removeChild(input);
+  });
+
+  document.body.appendChild(input);
+  input.click();
+};
+const exportAnnotations = () => {
+  const text = JSON.stringify(webAnnotationToLabelme(annotations.value), null, 4);
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = url;
+  a.download = 'annotations.json';
+
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
 const handleOnDeleteAnnotation = (annotationId) => {
   annotations.value.splice(
     annotations.value.findIndex((a) => a.id === annotationId),
@@ -196,7 +335,6 @@ const findTag = (annotation) => {
 };
 
 const onKeyDown = (evt) => {
-  console.log(evt.key)
   if (
     evt.key.toLowerCase() === hotkey &&
     curTool.value !== tools.value.mouse &&
@@ -206,7 +344,7 @@ const onKeyDown = (evt) => {
     changeDrawingTool(tools.value.mouse);
   }
 };
-const onKeyUp = (evt) => {console.log('onKeyUp')
+const onKeyUp = (evt) => {
   if (
     evt.key.toLowerCase() === hotkey &&
     curTool.value === tools.value.mouse &&
@@ -269,40 +407,58 @@ onUnmounted(() => {
           {{ tag.id }}
         </div>
       </div>
-      <div class="annotation-group">
-        <div
-          v-for="(annotation, index) in annotations"
-          :class="{ 'annotation-item': true, 'is-current': annotation.id === curAnnotaion?.id }"
-          :style="{
-            borderColor: findTag(annotation).color,
-            backgroundColor: annotation.id === curAnnotaion?.id ? findTag(annotation).color : '',
-            cursor: curTool === tools.mouse ? 'pointer' : 'default',
-          }"
-          @click="curTool === tools.mouse && selectAnnotation(annotation.id)"
-        >
-          <div class="annotation-item-tag">
-            {{ index + 1 }}.&nbsp;
-            <select
-              v-show="curTool === tools.mouse"
-              class="tag-select"
-              :value="findTag(annotation).id"
-              @change="changeAnnotationTag(annotation.id, $event.target.value)"
-            >
-              <option
-                v-for="tag in tags"
-                :value="tag.id"
-              >
-                {{ tag.id }}
-              </option>
-            </select>
-            <span v-show="curTool !== tools.mouse">{{ findTag(annotation).id }}</span>
+      <div class="annotation-group-wrapper">
+        <div class="annotation-handle-box">
+          <div
+            class="handle-btn"
+            @click="importAnnotations"
+          >
+            <IconImport class="icon" />
+            导入
           </div>
           <div
-            class="delete-btn"
-            title="删除"
-            @click.stop="removeAnnotation(annotation.id)"
+            class="handle-btn"
+            @click="exportAnnotations"
           >
-            <IconDelete />
+            <IconExport class="icon" />
+            导出
+          </div>
+        </div>
+        <div class="annotation-group">
+          <div
+            v-for="(annotation, index) in annotations"
+            :class="{ 'annotation-item': true, 'is-current': annotation.id === curAnnotaion?.id }"
+            :style="{
+              borderColor: findTag(annotation).color,
+              backgroundColor: annotation.id === curAnnotaion?.id ? findTag(annotation).color : '',
+              cursor: curTool === tools.mouse ? 'pointer' : 'default',
+            }"
+            @click="curTool === tools.mouse && selectAnnotation(annotation.id)"
+          >
+            <div class="annotation-item-tag">
+              {{ index + 1 }}.&nbsp;
+              <select
+                v-show="curTool === tools.mouse"
+                class="tag-select"
+                :value="findTag(annotation).id"
+                @change="changeAnnotationTag(annotation.id, $event.target.value)"
+              >
+                <option
+                  v-for="tag in tags"
+                  :value="tag.id"
+                >
+                  {{ tag.id }}
+                </option>
+              </select>
+              <span v-show="curTool !== tools.mouse">{{ findTag(annotation).id }}</span>
+            </div>
+            <div
+              class="delete-btn"
+              title="删除"
+              @click.stop="removeAnnotation(annotation.id)"
+            >
+              <IconDelete />
+            </div>
           </div>
         </div>
       </div>
@@ -424,6 +580,8 @@ onUnmounted(() => {
 }
 
 .annotation-wrapper {
+  display: flex;
+  flex-direction: column;
   grid-area: rightbar;
   overflow: hidden;
 }
@@ -464,14 +622,55 @@ onUnmounted(() => {
   }
 }
 
-.annotation-group {
-  height: calc(70% - 10px);
-  padding: 10px;
+.annotation-group-wrapper {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
   margin-top: 10px;
-  overflow: auto;
   background-color: #fff;
   border: 1px solid #ccc;
   border-radius: 4px;
+}
+
+.annotation-handle-box {
+  display: flex;
+  padding: 5px;
+  border-bottom: 1px solid #ccc;
+
+  .handle-btn {
+    display: flex;
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s;
+
+    + .handle-btn {
+      margin-left: 10px;
+    }
+
+    .icon {
+      margin-right: 6px;
+      font-size: 24px;
+    }
+
+    &:hover {
+      background-color: #eee;
+    }
+
+    &:active {
+      background-color: #ccc;
+    }
+  }
+}
+
+.annotation-group {
+  flex-grow: 1;
+  flex-basis: 10px;
+  padding: 10px;
+  overflow: auto;
 
   .annotation-item {
     display: flex;
