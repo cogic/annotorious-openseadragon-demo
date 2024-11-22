@@ -1,5 +1,5 @@
-<script setup>
-import HomeView from '@/views/HomeView.vue'
+<script setup lang="js">
+import HomeView from '@/views/HomeView.vue';
 </script>
 
 <template>
@@ -16,7 +16,7 @@ import HomeView from '@/views/HomeView.vue'
 </template>
 
 <style lang="scss">
-@use "sass:math";
+@use 'sass:math';
 
 .container {
   display: grid;

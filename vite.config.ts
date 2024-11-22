@@ -16,8 +16,8 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         // https://sass-lang.com/documentation/breaking-changes/legacy-js-api/
-        api: 'modern-compiler'
-      }
-    }
-  }
+        api: 'modern-compiler',
+      },
+    },
+  },
 });

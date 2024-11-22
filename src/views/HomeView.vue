@@ -1,11 +1,9 @@
-<script setup>
+<script setup lang="js">
 import { ref, onMounted, markRaw } from 'vue';
 import OpenSeadragon from 'openseadragon';
 import Annotorious from '@recogito/annotorious-openseadragon';
 import '@recogito/annotorious-openseadragon/dist/annotorious.min.css';
-import {
-  parseRectFragment,
-} from '@recogito/annotorious/src/selectors/RectFragment';
+import { parseRectFragment } from '@recogito/annotorious/src/selectors/RectFragment';
 import { svgFragmentToShape } from '@recogito/annotorious/src/selectors/EmbeddedSVG';
 import LabelsFormatter from '@/assets/LabelsFormatter';
 import IconPolygon from '@/components/icons/IconPolygon.vue';
@@ -46,7 +44,7 @@ const imageControls = ref({
 });
 const annotations = ref([]);
 const hotkey = 'shift';
-let isDrawing = ref(false);
+const isDrawing = ref(false);
 
 const initAnno = () => {
   const formatter = function (annotation) {
@@ -290,13 +288,13 @@ const importAnnotations = () => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const annotationList = labelmeToWebAnnotation(JSON.parse(e.target.result))
-        annotationList.forEach(annotation => {
+        const annotationList = labelmeToWebAnnotation(JSON.parse(e.target.result));
+        annotationList.forEach((annotation) => {
           anno.value.addAnnotation(annotation);
           annotations.value.push(annotation);
         });
       } catch (error) {
-        console.error(error)
+        console.error(error);
       }
     };
     reader.readAsText(files[0]);
@@ -374,6 +372,7 @@ onUnmounted(() => {
     <div class="tool-group btn-group">
       <div
         v-for="tool in tools"
+        :key="tool.id"
         :class="{ 'tool-item': true, 'is-active': curTool === tool }"
         :title="tool.label"
         @click="changeDrawingTool(tool)"
@@ -388,6 +387,7 @@ onUnmounted(() => {
       <div class="image-control-group">
         <div
           v-for="btn in imageControls"
+          :key="btn.id"
           :id="btn.id"
           class="image-control-item"
         >
@@ -400,6 +400,7 @@ onUnmounted(() => {
         <div>标签：</div>
         <div
           v-for="tag in tags"
+          :key="tag.id"
           :class="{ 'label-item': true, 'is-current': curTag === tag }"
           :style="{ borderColor: tag.color, backgroundColor: curTag === tag ? tag.color : '' }"
           @click="changeTag(tag)"
@@ -427,6 +428,7 @@ onUnmounted(() => {
         <div class="annotation-group">
           <div
             v-for="(annotation, index) in annotations"
+            :key="annotation.id"
             :class="{ 'annotation-item': true, 'is-current': annotation.id === curAnnotaion?.id }"
             :style="{
               borderColor: findTag(annotation).color,
@@ -445,6 +447,7 @@ onUnmounted(() => {
               >
                 <option
                   v-for="tag in tags"
+                  :key="tag.id"
                   :value="tag.id"
                 >
                   {{ tag.id }}
