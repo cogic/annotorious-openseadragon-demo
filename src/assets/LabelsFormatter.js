@@ -1,6 +1,6 @@
 import './LabelsFormatter.css';
 
-const LabelsFormatter = (config) => (annotation) => {
+const LabelsFormatter = (annotation) => {
   const bodies = Array.isArray(annotation.body) ? annotation.body : [annotation.body];
 
   const firstTag = bodies.find((b) => b.purpose == 'tagging');

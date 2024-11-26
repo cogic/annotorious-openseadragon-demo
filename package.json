@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@recogito/annotorious": "github:cogic/annotorious#2.x",
+    "@recogito/annotorious-better-polygon": "github:cogic/annotorious-v2-plugins#annotorious-better-polygon",
     "@recogito/annotorious-openseadragon": "github:cogic/annotorious-openseadragon",
     "openseadragon": "^4.0.0",
     "pinia": "^2.2.4",

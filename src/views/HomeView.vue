@@ -3,6 +3,7 @@ import { ref, onMounted, markRaw } from 'vue';
 import OpenSeadragon from 'openseadragon';
 import Annotorious from '@recogito/annotorious-openseadragon';
 import '@recogito/annotorious-openseadragon/dist/annotorious.min.css';
+import BetterPolygon from '@recogito/annotorious-better-polygon/src';
 import { parseRectFragment } from '@recogito/annotorious/src/selectors/RectFragment';
 import { svgFragmentToShape } from '@recogito/annotorious/src/selectors/EmbeddedSVG';
 import LabelsFormatter from '@/assets/LabelsFormatter';
@@ -52,8 +53,7 @@ const initAnno = () => {
     if (tag && tag.value) {
       return {
         className: 'tag-shape',
-        style: `--tag-color: ${tag.value.color};`,
-        editableShapeStyle: `--tag-color: ${tag.value.color};`,
+        shapeStyle: `--tag-color: ${tag.value.color};`,
       };
     }
   };
@@ -90,8 +90,7 @@ const initAnno = () => {
     allowEmpty: true,
     drawOnSingleClick: true,
     enableEdgeControls: true,
-    handleRadius: 4,
-    minPolygonPoints: 3,
+    handleRadius: 6,
     hotkey: 'null',
     // Only works when drawOnSingleClick is true
     addPolygonPointOnMouseDown: true,
@@ -99,10 +98,15 @@ const initAnno = () => {
     syncRemoveOriginalShape: true,
     // If true, no shapes will be set to hoverd when tools.current.enable is true
     disableHoverWhenToolEnabled: true,
-    formatters: [LabelsFormatter(), formatter],
+    // For annotorious-better-polygon
+    enableMultiPointSelection: false,
+    // For annotorious-better-polygon
+    hideMidpointOnSmallDistance: true,
+    formatters: [LabelsFormatter, formatter],
   };
 
   anno.value = Annotorious(viewer.value, config);
+  BetterPolygon(anno.value);
 
   curTool.value = tools.value.mouse;
   curTag.value = tags.value[0];
@@ -387,8 +391,8 @@ onUnmounted(() => {
       <div class="image-control-group">
         <div
           v-for="btn in imageControls"
-          :key="btn.id"
           :id="btn.id"
+          :key="btn.id"
           class="image-control-item"
         >
           <component :is="btn.icon"></component>
@@ -737,7 +741,27 @@ onUnmounted(() => {
   outline: none;
 }
 
-.tag-shape {
+.a9s-selection:not(.improved-polygon),
+.a9s-selection.improved-polygon {
+  .a9s-outer {
+    stroke: rgb(0 0 0 / 35%);
+    stroke-width: 3px;
+  }
+
+  .a9s-inner {
+    stroke: #fff;
+    stroke-dasharray: 5 3;
+    stroke-width: 2px;
+  }
+}
+
+.a9s-annotation {
+  /* stylelint-disable-next-line no-descending-specificity */
+  .a9s-outer {
+    display: none;
+  }
+
+  /* stylelint-disable-next-line no-descending-specificity */
   .a9s-inner {
     fill: var(--tag-color);
     fill-opacity: 0.1;
@@ -746,15 +770,30 @@ onUnmounted(() => {
     transition: fill-opacity 0.2s;
   }
 
-  &.hover .a9s-inner {
-    fill-opacity: 0.3;
+  .a9s-formatter-el foreignObject .a8s-shape-label-wrapper .a8s-shape-label {
+    background-color: var(--tag-color);
+    border: 1px solid var(--tag-color);
+    opacity: 0.8;
+    transition:
+      opacity 0.2s,
+      background-color 0.2s;
   }
-}
 
-.a9s-annotation {
-  &.editable {
+  &.hover {
+    .a9s-inner {
+      fill-opacity: 0.3;
+    }
+
+    .a9s-formatter-el foreignObject .a8s-shape-label-wrapper .a8s-shape-label {
+      opacity: 1;
+    }
+  }
+
+  &.editable:not(.improved-polygon),
+  &.editable.improved-polygon {
     .a9s-inner {
       fill-opacity: 0.4;
+      stroke-dasharray: 5 3;
 
       &:hover {
         fill: var(--tag-color);
@@ -766,17 +805,19 @@ onUnmounted(() => {
       .a9s-handle-outer,
       .a9s-handle-inner {
         transition:
-          transform 0.2s,
           fill 0.2s,
           fill-opacity 0.2s,
           stroke 0.2s,
           stroke-width 0.2s;
       }
 
-      .a9s-handle-inner {
-        fill: var(--tag-color);
-        stroke: #000;
-        stroke-width: 1;
+      &:not(.selected),
+      &.selected {
+        .a9s-handle-inner {
+          fill: var(--tag-color);
+          stroke: #000;
+          stroke-width: 1;
+        }
       }
 
       &:hover {
@@ -797,14 +838,12 @@ onUnmounted(() => {
           fill: transparent;
           stroke: #fff;
           stroke-width: 3;
-          transform: scale(2.5);
         }
 
         .a9s-handle-inner {
           cursor: none;
           fill-opacity: 0.1;
           stroke-width: 2;
-          transform: scale(2.5);
         }
 
         ~ .a9s-handle {
@@ -813,6 +852,11 @@ onUnmounted(() => {
           }
         }
       }
+    }
+
+    .a9s-formatter-el foreignObject .a8s-shape-label-wrapper .a8s-shape-label {
+      border-color: #000;
+      opacity: 1;
     }
   }
 }
