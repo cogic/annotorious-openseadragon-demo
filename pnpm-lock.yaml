@@ -13,10 +13,10 @@ importers:
         version: https://codeload.github.com/cogic/annotorious/tar.gz/4ae4aee9cb50ef4d40465c8cace74a3eb57c1923(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
       '@recogito/annotorious-better-polygon':
         specifier: github:cogic/annotorious-v2-plugins#annotorious-better-polygon
-        version: https://codeload.github.com/cogic/annotorious-v2-plugins/tar.gz/659d49cc1e1efb448dab1fa2a62c1678231f6001(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: https://codeload.github.com/cogic/annotorious-v2-plugins/tar.gz/ca1c2e5ce606a09253eb3359c1022765e83ee8c7(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
       '@recogito/annotorious-openseadragon':
         specifier: github:cogic/annotorious-openseadragon
-        version: https://codeload.github.com/cogic/annotorious-openseadragon/tar.gz/c00efd31f58975f9c7f0c247a90067f46f74cf1c(openseadragon@4.0.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: https://codeload.github.com/cogic/annotorious-openseadragon/tar.gz/9f8472fed21df588be5080ad5b87db76fd71ac7b(openseadragon@4.0.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
       openseadragon:
         specifier: ^4.0.0
         version: 4.0.0
@@ -454,12 +454,12 @@ packages:
     resolution: {integrity: sha512-cq8o4cWH0ibXh9VGi5P20Tu9XF/0fFXl9EUinr9QfTM7a7p0oTA4iJRCQWppXR1Pg8dSM0UCItCkPwsk9qWWYA==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
 
-  '@recogito/annotorious-better-polygon@https://codeload.github.com/cogic/annotorious-v2-plugins/tar.gz/659d49cc1e1efb448dab1fa2a62c1678231f6001':
-    resolution: {tarball: https://codeload.github.com/cogic/annotorious-v2-plugins/tar.gz/659d49cc1e1efb448dab1fa2a62c1678231f6001}
+  '@recogito/annotorious-better-polygon@https://codeload.github.com/cogic/annotorious-v2-plugins/tar.gz/ca1c2e5ce606a09253eb3359c1022765e83ee8c7':
+    resolution: {tarball: https://codeload.github.com/cogic/annotorious-v2-plugins/tar.gz/ca1c2e5ce606a09253eb3359c1022765e83ee8c7}
     version: 0.2.1
 
-  '@recogito/annotorious-openseadragon@https://codeload.github.com/cogic/annotorious-openseadragon/tar.gz/c00efd31f58975f9c7f0c247a90067f46f74cf1c':
-    resolution: {tarball: https://codeload.github.com/cogic/annotorious-openseadragon/tar.gz/c00efd31f58975f9c7f0c247a90067f46f74cf1c}
+  '@recogito/annotorious-openseadragon@https://codeload.github.com/cogic/annotorious-openseadragon/tar.gz/9f8472fed21df588be5080ad5b87db76fd71ac7b':
+    resolution: {tarball: https://codeload.github.com/cogic/annotorious-openseadragon/tar.gz/9f8472fed21df588be5080ad5b87db76fd71ac7b}
     version: 2.7.18
     peerDependencies:
       openseadragon: ^3.0.0 || ^4.0.0
@@ -2368,16 +2368,16 @@ snapshots:
 
   '@pkgr/core@0.1.1': {}
 
-  '@recogito/annotorious-better-polygon@https://codeload.github.com/cogic/annotorious-v2-plugins/tar.gz/659d49cc1e1efb448dab1fa2a62c1678231f6001(react-dom@16.14.0(react@16.14.0))(react@16.14.0)':
+  '@recogito/annotorious-better-polygon@https://codeload.github.com/cogic/annotorious-v2-plugins/tar.gz/ca1c2e5ce606a09253eb3359c1022765e83ee8c7(react-dom@16.14.0(react@16.14.0))(react@16.14.0)':
     dependencies:
-      '@recogito/annotorious': https://codeload.github.com/cogic/annotorious/tar.gz/4ae4aee9cb50ef4d40465c8cace74a3eb57c1923(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      '@recogito/annotorious': https://codeload.github.com/cogic/annotorious/tar.gz/67f701aa17f0f3076fd3a0e8a28d20ac4ec68fc2(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
     transitivePeerDependencies:
       - '@types/react'
       - react
       - react-dom
       - supports-color
 
-  '@recogito/annotorious-openseadragon@https://codeload.github.com/cogic/annotorious-openseadragon/tar.gz/c00efd31f58975f9c7f0c247a90067f46f74cf1c(openseadragon@4.0.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)':
+  '@recogito/annotorious-openseadragon@https://codeload.github.com/cogic/annotorious-openseadragon/tar.gz/9f8472fed21df588be5080ad5b87db76fd71ac7b(openseadragon@4.0.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)':
     dependencies:
       '@recogito/annotorious': https://codeload.github.com/cogic/annotorious/tar.gz/67f701aa17f0f3076fd3a0e8a28d20ac4ec68fc2(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
       '@recogito/recogito-client-core': 1.7.9(react-dom@16.14.0(react@16.14.0))(react@16.14.0)

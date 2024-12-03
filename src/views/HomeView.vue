@@ -6,6 +6,7 @@ import '@recogito/annotorious-openseadragon/dist/annotorious.min.css';
 import BetterPolygon from '@recogito/annotorious-better-polygon/src';
 import { parseRectFragment } from '@recogito/annotorious/src/selectors/RectFragment';
 import { svgFragmentToShape } from '@recogito/annotorious/src/selectors/EmbeddedSVG';
+import { addClass, hasClass, removeClass } from '@recogito/annotorious/src/util/SVG';
 import LabelsFormatter from '@/assets/LabelsFormatter';
 import IconPolygon from '@/components/icons/IconPolygon.vue';
 import IconRectangle from '@/components/icons/IconRectangle.vue';
@@ -19,6 +20,7 @@ import IconImport from '@/components/icons/IconImport.vue';
 import IconExport from '@/components/icons/IconExport.vue';
 import { onUnmounted } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
+import { isSegmentsIntersect } from '@/assets/segment.js';
 
 const anno = ref();
 const curTag = ref();
@@ -32,10 +34,10 @@ const tools = ref({
   polygon: { id: 'polygon', label: '多边形', icon: markRaw(IconPolygon) },
 });
 const tags = ref([
-  { id: '猫', color: 'rgb(49 124 189)' },
-  { id: '狗', color: 'rgb(48 158 94)' },
-  { id: '兔子', color: 'rgb(207 163 67)' },
-  { id: '老虎', color: 'rgb(224 91 24)' },
+  { id: '猫', color: '#3DA5FF' },
+  { id: '狗', color: '#41F08A' },
+  { id: '兔子', color: '#FFC74D' },
+  { id: '老虎', color: '#FF6E25' },
 ]);
 const imageControls = ref({
   zoomInButton: { id: 'zoom-in-btn', label: '放大', icon: markRaw(IconPlus) },
@@ -92,6 +94,8 @@ const initAnno = () => {
     enableEdgeControls: true,
     handleRadius: 6,
     hotkey: 'null',
+    crosshair: true,
+    crosshairWithCursor: true,
     // Only works when drawOnSingleClick is true
     addPolygonPointOnMouseDown: true,
     // Whether to remove the original shape synchronously to avoid shape change bounce
@@ -102,14 +106,13 @@ const initAnno = () => {
     enableMultiPointSelection: false,
     // For annotorious-better-polygon
     hideMidpointOnSmallDistance: true,
+    // For annotorious-better-polygon
+    polygonCornerDeletable: true,
     formatters: [LabelsFormatter, formatter],
   };
 
   anno.value = Annotorious(viewer.value, config);
   BetterPolygon(anno.value);
-
-  curTool.value = tools.value.mouse;
-  curTag.value = tags.value[0];
 
   anno.value.on('createAnnotation', (annotation) => {
     // anno.value.selectAnnotation(annotation);
@@ -118,6 +121,8 @@ const initAnno = () => {
     changeDrawingTool(curTool.value);
     isDrawing.value = false;
     // changeDrawingTool(tools.value.mouse);
+
+    onSaveAnnotation(annotation);
   });
 
   anno.value.on('deleteAnnotation', function (annotation) {
@@ -142,6 +147,7 @@ const initAnno = () => {
 
   anno.value.on('cancelSelected', (selection) => {
     curAnnotaion.value = null;
+    onSaveAnnotation(selection);
   });
 
   anno.value.on('startSelection', (point) => {
@@ -154,6 +160,7 @@ const initAnno = () => {
 
   anno.value.on('updateAnnotation', (annotation, previous) => {
     console.log('updateAnnotation', annotation, previous);
+    onSaveAnnotation(annotation);
   });
 };
 const changeDrawingTool = (tool) => {
@@ -161,8 +168,10 @@ const changeDrawingTool = (tool) => {
     anno.value.setDrawingEnabled(false, true);
     viewer.value.gestureSettingsMouse.dragToPan = true;
   } else {
+    const tempCurAnnotation = curAnnotaion.value;
     anno.value.saveSelected();
     anno.value.selectAnnotation();
+    tempCurAnnotation && onSaveAnnotation(tempCurAnnotation);
 
     // setDrawingTool 须于 setDrawingEnabled 前执行，以使得 disableHoverWhenToolEnabled 生效
     anno.value.setDrawingTool(tool?.id);
@@ -171,7 +180,7 @@ const changeDrawingTool = (tool) => {
   }
   curTool.value = tool;
 };
-const changeTag = async (tag) => {
+const changeTag = (tag) => {
   curTag.value = tag;
 };
 
@@ -296,6 +305,7 @@ const importAnnotations = () => {
         annotationList.forEach((annotation) => {
           anno.value.addAnnotation(annotation);
           annotations.value.push(annotation);
+          onSaveAnnotation(annotation);
         });
       } catch (error) {
         console.error(error);
@@ -310,7 +320,7 @@ const importAnnotations = () => {
   input.click();
 };
 const exportAnnotations = () => {
-  const text = JSON.stringify(webAnnotationToLabelme(annotations.value), null, 4);
+  const text = JSON.stringify(webAnnotationToLabelme(anno.value.getAnnotations()), null, 4);
   const blob = new Blob([text], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -330,6 +340,37 @@ const handleOnDeleteAnnotation = (annotationId) => {
     1
   );
   isDrawing.value = false;
+};
+
+const onSaveAnnotation = (annotation) => {
+  const hasIntersectingEdges = (points) => {
+    const n = points.length;
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        if (i === 0 && j === n - 1) continue;
+        const p1 = points[i];
+        const p2 = points[(i + 1) % n];
+        const p3 = points[j];
+        const p4 = points[(j + 1) % n];
+        if (isSegmentsIntersect(p1, p2, p3, p4)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  const shape = webAnnotationToLabelme([annotation]).shapes[0];
+  if (shape.shape_type === 'polygon') {
+    const points = shape.points.map((point) => ({ x: point[0], y: point[1] }));
+
+    const shapeEl = document.querySelector(`.a9s-annotation[data-id='${annotation.id}']`);
+    if (shapeEl && hasIntersectingEdges(points) && !hasClass(shapeEl, 'error-shape')) {
+      addClass(shapeEl, 'error-shape');
+    } else if (shapeEl && hasClass(shapeEl, 'error-shape')) {
+      removeClass(shapeEl, 'error-shape');
+    }
+  }
 };
 
 const findTag = (annotation) => {
@@ -359,6 +400,9 @@ const onKeyUp = (evt) => {
 
 onMounted(() => {
   initAnno();
+
+  changeDrawingTool(tools.value.mouse);
+  changeTag(tags.value[0]);
 
   // BUG: 鼠标选中标注后再次点击标注或拖拽标注，此时鼠标若在标注上，则无法监听到按键事件
   document.addEventListener('keydown', onKeyDown);
@@ -756,6 +800,13 @@ onUnmounted(() => {
 }
 
 .a9s-annotation {
+  &.error-shape {
+    .a9s-inner {
+      fill: red !important;
+      stroke: red !important;
+    }
+  }
+
   /* stylelint-disable-next-line no-descending-specificity */
   .a9s-outer {
     display: none;
@@ -852,6 +903,16 @@ onUnmounted(() => {
           }
         }
       }
+
+      &:hover,
+      &:active {
+        &.deletable {
+          .a9s-handle-inner {
+            fill: red;
+            fill-opacity: 1;
+          }
+        }
+      }
     }
 
     .a9s-formatter-el foreignObject .a8s-shape-label-wrapper .a8s-shape-label {
@@ -861,10 +922,21 @@ onUnmounted(() => {
   }
 }
 
-.image-container:not(.edit-mode) .a9s-annotation {
-  rect,
-  polygon {
-    cursor: default;
+.image-container {
+  &.edit-mode {
+    .a9s-crosshair {
+      display: none;
+    }
+  }
+
+  &:not(.edit-mode) {
+    .a9s-annotationlayer {
+      cursor: none !important;
+
+      * {
+        cursor: none !important;
+      }
+    }
   }
 }
 </style>
